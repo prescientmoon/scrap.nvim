@@ -1,6 +1,6 @@
 local internal = require("scrap.internal")
 
 return {
-  abbreviateMany = internal.abbreviateMany
+  expand_many = internal.expand_many
 }
 

@@ -17,7 +17,8 @@ end
 ---@return T
 ---@nodiscard
 local function merge_tables(t, r)
-  local result = { unpack(t) }
+  local result = {}
+  for k, v in pairs(t) do result[k] = v end
   for k, v in pairs(r) do result[k] = v end
 
   return result
@@ -98,7 +99,7 @@ local function listPop(list)
 end
 
 ---Shows a sequence for debugging
----@param seq Sequence
+---@param seq ScrapSequence
 ---@return string
 function scrap.showSequence(seq)
   local result = ""
@@ -107,7 +108,7 @@ function scrap.showSequence(seq)
     if type(scrap.value) == "string" then
       result = result .. scrap.value
     else
-      local alternatives = scrap.value --[[@as Sequence[] ]]
+      local alternatives = scrap.value --[[@as ScrapSequence[] ]]
       result = result .. "{"
       for i, alternative in pairs(alternatives) do
         result = result .. scrap.showSequence(alternative)
@@ -125,17 +126,17 @@ end
 
 -- }}}
 -- {{{ Basic type definitions
----@class StringSlice
+---@class ScrapStringSlice
 ---@field start integer
 ---@field length integer
 ---@field text string
 
 ---@class Scrap
----@field value string|Sequence[]
----@field source StringSlice
+---@field value string|ScrapSequence[]
+---@field source ScrapStringSlice
 
----@alias Sequence Scrap[]
----@alias Abbreviation Pair<string>
+---@alias ScrapSequence Scrap[]
+---@alias ScrapAbbreviation Pair<string>
 
 ---@class Pair<T>: { [1]: T, [2]: T}
 
@@ -143,7 +144,7 @@ end
 ---@param text string
 ---@param start integer
 ---@param length integer
----@return StringSlice
+---@return ScrapStringSlice
 function scrap.mk_string_slice(text, start, length)
   return { text = text, start = start, length = length }
 end
@@ -162,7 +163,7 @@ end
 ---@param text string
 ---@param start integer
 ---@param length integer
----@param alternatives Sequence[]
+---@param alternatives ScrapSequence[]
 ---@return Scrap
 function scrap.mk_alternative_scrap(text, start, length, alternatives)
   return {
@@ -174,7 +175,7 @@ end
 -- }}}
 -- {{{ Error handling
 ---Formats a string slice in a readable manner
----@param slice StringSlice
+---@param slice ScrapStringSlice
 function scrap.formatSlice(slice)
   return slice.text .. "\n" .. replicateString(" ", slice.start - 1) ..
              replicateString("^", slice.length)
@@ -183,24 +184,24 @@ end
 -- }}}
 -- {{{ Parsing
 -- {{{ Type definitions & helpers
----@class ParsingContext
+---@class ScrapParsingContext
 ---@field delimiters {left:string,right:string}
 ---@field separator string
 
----@class ParsingError
+---@class ScrapParsingError
 ---@field position integer
 ---@field message string
 
 ---Helper for constructing errors
 ---@param message string
 ---@param position integer
----@return ParsingError
+---@return ScrapParsingError
 local function parsing_error(message, position)
   return { position = position, message = message }
 end
 
 ---Throws a parsing error
----@param err ParsingError
+---@param err ScrapParsingError
 ---@param text string
 local function throw_parsing_error(err, text)
   local lines = {
@@ -210,23 +211,21 @@ local function throw_parsing_error(err, text)
   error(table.concat(lines, "\n"))
 end
 
----@class IncompleteScrap<T> {start:integer, contents: T[]}
-
----@class ParsingStackElement
+---@class ScrapParsingStackElement
 ---@field start integer
----@field contents Sequence
----@field currentChildren {start:integer, contents:Sequence[]}
+---@field contents ScrapSequence
+---@field currentChildren {start:integer, contents:ScrapSequence[]}
 -- }}}
 -- {{{Main parser
 ---Parses the input for this plugin
 ---@param input string
----@param context ParsingContext
----@return Sequence|nil
----@return nil|ParsingError
+---@param context ScrapParsingContext
+---@return ScrapSequence|nil
+---@return nil|ScrapParsingError
 function scrap.parse(input, context)
-  ---@type ParsingStackElement[]
+  ---@type ScrapParsingStackElement[]
   local stack = {}
-  ---@type {start:integer, contents:Sequence}
+  ---@type {start:integer, contents:ScrapSequence}
   local topmost = { start = 1, contents = {} }
 
   local escaped = false
@@ -283,7 +282,7 @@ function scrap.parse(input, context)
 
       saveUp(true)
 
-      local prev = listPop(stack) --[[@as ParsingStackElement]]
+      local prev = listPop(stack) --[[@as ScrapParsingStackElement]]
 
       ---@type Scrap
       local scrap = {
@@ -346,9 +345,9 @@ end
 -- {{{ Expansion
 -- {{{ Expand a single abbreviation
 ---Expands a pair of sequences to strings which can be used for abbreviations
----@param unprocessed Pair<Sequence>
----@param context Abbreviation
----@param out Abbreviation[]
+---@param unprocessed Pair<ScrapSequence>
+---@param context ScrapAbbreviation
+---@param out ScrapAbbreviation[]
 ---@return nil
 local function expand(unprocessed, context, out)
   local from = unprocessed[1]
@@ -368,9 +367,9 @@ local function expand(unprocessed, context, out)
 
       context_clone[i] = context_clone[i] .. head.value
 
-      ---@type Pair<Sequence>
+      ---@type Pair<ScrapSequence>
       local unprocessed_clone = cloneList(unprocessed)
-      unprocessed_clone[i] = listTail(unprocessed[i] --[[@as Sequence]] )
+      unprocessed_clone[i] = listTail(unprocessed[i] --[[@as ScrapSequence]] )
 
       return expand(unprocessed_clone, context_clone, out)
     end
@@ -392,8 +391,8 @@ local function expand(unprocessed, context, out)
     error(table.concat(lines, "\n"))
   end
 
-  local from_alternatives = from[1].value --[[@as Sequence[] ]]
-  local to_alternatives = to[1].value --[[@as Sequence[] ]]
+  local from_alternatives = from[1].value --[[@as ScrapSequence[] ]]
+  local to_alternatives = to[1].value --[[@as ScrapSequence[] ]]
 
   if #from_alternatives == 0 then
     local lines = {
@@ -424,22 +423,22 @@ end
 
 -- }}}
 -- {{{Expansion options & casing variations
----@class ExpansionOptions
+---@class ScrapExpansionOptions
 ---@field all_caps boolean|nil
 ---@field capitalized boolean|nil
 
----@type ExpansionOptions
+---@type ScrapExpansionOptions
 local default_expansion_options = { capitalized = true, all_caps = false }
 
----@class ExpansionInput
+---@class ScrapExpansionInput
 ---@field [1] string
 ---@field [2] string
----@field options ExpansionOptions|nil
+---@field options ScrapExpansionOptions|nil
 
 ---Adds casing variations to abbreviations
----@param input Abbreviation
----@param options ExpansionOptions
----@param out Abbreviation[]
+---@param input ScrapAbbreviation
+---@param options ScrapExpansionOptions
+---@param out ScrapAbbreviation[]
 local function with_casing(input, options, out)
   local from = input[1]
   local to = input[2]
@@ -452,7 +451,7 @@ local function with_casing(input, options, out)
     listPush(out, { string.upper(from), string.upper(to) })
   end
 
-  if options.all_caps then
+  if options.capitalized then
     -- Uppercase first char
     if #from and #to then
       listPush(out, { capitalizeString(from), capitalizeString(to) })
@@ -463,23 +462,23 @@ end
 -- }}}
 -- {{{Glue code for the above
 ---Expands a pair of sequences to strings which can be used for abbreviations
----@param input Pair<Sequence>
----@param options ExpansionOptions
----@return Abbreviation[]
+---@param input Pair<ScrapSequence>
+---@param options ScrapExpansionOptions
+---@return ScrapAbbreviation[]
 function scrap.expand(input, options)
   -- First we do the barebones expansion
-  ---@type Abbreviation[]
+  ---@type ScrapAbbreviation[]
   local result = {}
 
   expand({ input[1], input[2] }, { "", "" }, result)
 
   -- Then we add casing variations
-  ---@type Abbreviation[]
+  ---@type ScrapAbbreviation[]
   local final_result = {}
 
   for _, v in pairs(result) do with_casing(v, options, final_result) end
 
-  return result
+  return final_result
 end
 
 scrap.default_context = {
@@ -488,9 +487,9 @@ scrap.default_context = {
 }
 
 ---Parse and expand a list of patterns
----@param many ExpansionInput[]
----@param options ExpansionOptions|nil
----@return Abbreviation[]
+---@param many ScrapExpansionInput[]
+---@param options ScrapExpansionOptions|nil
+---@return ScrapAbbreviation[]
 ---@nodiscard
 function scrap.expand_many(many, options)
   options = options or default_expansion_options
@@ -504,10 +503,11 @@ function scrap.expand_many(many, options)
     elseif err_r then
       throw_parsing_error(err_r, entry[2])
     else
-      ---@cast left Sequence
-      ---@cast right Sequence
-      local abbreviations = scrap.expand(merge_tables(entry, { left, right }),
-                                         merge_tables(options, entry))
+      ---@cast left ScrapSequence
+      ---@cast right ScrapSequence
+      local abbreviations = scrap.expand({ left, right }, merge_tables(options,
+                                                                       entry.options or
+                                                                           {}))
 
       results = concat_tables(results, abbreviations)
     end

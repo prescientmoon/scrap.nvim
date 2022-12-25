@@ -7,11 +7,11 @@ local function parse(input)
 end
 
 describe("Scrap", function()
-  --{{{ Parser
+  -- {{{ Parser
   describe("Parser", function()
     ---Expects some input to parse to some output
     ---@param input string
-    ---@param output Sequence
+    ---@param output ScrapSequence
     local function should_parse_to(input, output)
       assert.same(output, parse(input))
     end
@@ -22,7 +22,7 @@ describe("Scrap", function()
     local function should_fail_parsing_at(input, position)
       local _, err = parse(input)
       assert.is_not_nil(err)
-      ---@cast err ParsingError
+      ---@cast err ScrapParsingError
       assert.equal(position, err.position)
     end
 
@@ -137,15 +137,15 @@ describe("Scrap", function()
       should_fail_parsing_at("{}{}}", 5)
     end)
   end)
-  --}}}
-  --{{{ Expansion
+  -- }}}
+  -- {{{ Expansion
   describe("Expansion", function()
-    ---@type ExpansionOptions
+    ---@type ScrapExpansionOptions
     local no_casing = { all_caps = false, capitalized = false }
 
     ---Make sure some patterns expand to some result
-    ---@param patterns ExpansionInput[]
-    ---@param expected Abbreviation[]
+    ---@param patterns ScrapExpansionInput[]
+    ---@param expected ScrapAbbreviation[]
     local function should_expand_to(patterns, expected)
       assert.same(expected, S.expand_many(patterns, no_casing))
     end
@@ -154,8 +154,8 @@ describe("Scrap", function()
     --   - we error out
     --   - the error contains the correct span
     ---Make sure some patterns expand to some result
-    ---@param patterns ExpansionInput[]
-    ---@param slice StringSlice
+    ---@param patterns ScrapExpansionInput[]
+    ---@param slice ScrapStringSlice
     local function should_fail_expanding(patterns, slice)
       assert.error_match(function()
         local _ = S.expand_many(patterns, no_casing)
@@ -213,18 +213,63 @@ describe("Scrap", function()
 
       do
         local problematic_left = "{1,2}abcd{3,4}"
-        local input = { {problematic_left, "ab{1,2,3}cd"} }
+        local input = { { problematic_left, "ab{1,2,3}cd" } }
 
         should_fail_expanding(input, S.mk_string_slice(problematic_left, 10, 5))
       end
     end)
 
-    it("should fail on empty block on the left", function ()
+    it("should fail on empty block on the left", function()
       local problematic_left = "e{}f"
-      local input = {{problematic_left, "{1,2,3}"}}
+      local input = { { problematic_left, "{1,2,3}" } }
 
-      should_fail_expanding(input, S.mk_string_slice(problematic_left,2,2))
+      should_fail_expanding(input, S.mk_string_slice(problematic_left, 2, 2))
+    end)
+
+    it("should produce capitalized variants by default", function()
+      local input = { { "something", "something" } }
+      local output = {
+        { "something", "something" },
+        { "Something", "Something" }
+      }
+
+      assert.same(output, S.expand_many(input))
+    end)
+
+    it("should allow turning down capitalization globally", function()
+      local input = { { "something", "something" }, { "else", "else" } }
+      local output = { { "something", "something" }, { "else", "else" } }
+
+      assert.same(output, S.expand_many(input, { capitalized = false }))
+    end)
+
+    it("should allow turning down capitalization locally", function()
+      local input = {
+        { "something", "something" },
+        { "else", "else", options = { capitalized = false } }
+      }
+
+      local output = {
+        { "something", "something" },
+        { "Something", "Something" },
+        { "else", "else" }
+      }
+
+      assert.same(output, S.expand_many(input))
+    end)
+
+    it("should allow turning on all caps mode", function()
+      local input = {
+        { "something", "something", options = {all_caps = true} },
+      }
+
+      local output = {
+        { "something", "something" },
+        { "SOMETHING", "SOMETHING" },
+      }
+
+      assert.same(output, S.expand_many(input, {capitalized = false}))
     end)
   end)
-  --}}}
+  -- }}}
 end)
