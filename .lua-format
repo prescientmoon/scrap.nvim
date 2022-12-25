@@ -1,0 +1,8 @@
+indent_width: 2
+column_limit: 80
+keep_simple_function_one_line: false
+spaces_inside_table_braces: true
+chop_down_table: true
+# chop_down_parameter: true
+# break_after_functioncall_lp: true
+# break_before_functioncall_rp: true
