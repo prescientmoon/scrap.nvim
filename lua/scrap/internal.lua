@@ -175,7 +175,7 @@ end
 -- {{{ Error handling
 ---Formats a string slice in a readable manner
 ---@param slice StringSlice
-local function formatSlice(slice)
+function scrap.formatSlice(slice)
   return slice.text .. "\n" .. replicateString(" ", slice.start - 1) ..
              replicateString("^", slice.length)
 end
@@ -205,7 +205,7 @@ end
 local function throw_parsing_error(err, text)
   local lines = {
     err.message,
-    formatSlice({ text = text, start = err.position, length = 1 })
+    scrap.formatSlice({ text = text, start = err.position, length = 1 })
   }
   error(table.concat(lines, "\n"))
 end
@@ -379,14 +379,14 @@ local function expand(unprocessed, context, out)
   if #from == 0 then
     local lines = {
       "Alternative on the right hand side of abbreviation has no match on the left:",
-      formatSlice(to[1].source)
+      scrap.formatSlice(to[1].source)
     }
 
     error(table.concat(lines, "\n"))
   elseif #to == 0 then
     local lines = {
       "Alternative on the left hand side of abbreviation has no match on the right:",
-      formatSlice(from[1].source)
+      scrap.formatSlice(from[1].source)
     }
 
     error(table.concat(lines, "\n"))
@@ -394,6 +394,15 @@ local function expand(unprocessed, context, out)
 
   local from_alternatives = from[1].value --[[@as Sequence[] ]]
   local to_alternatives = to[1].value --[[@as Sequence[] ]]
+
+  if #from_alternatives == 0 then
+    local lines = {
+      "Empty alternatives on left hand side of abbreviation would halt expansion.",
+      scrap.formatSlice(from[1].source)
+    }
+
+    error(table.concat(lines, "\n"))
+  end
 
   for i = 1, #from_alternatives, 1 do
     local when = from_alternatives[i]
@@ -481,6 +490,8 @@ scrap.default_context = {
 ---Parse and expand a list of patterns
 ---@param many ExpansionInput[]
 ---@param options ExpansionOptions|nil
+---@return Abbreviation[]
+---@nodiscard
 function scrap.expand_many(many, options)
   options = options or default_expansion_options
   local results = {}
@@ -501,6 +512,8 @@ function scrap.expand_many(many, options)
       results = concat_tables(results, abbreviations)
     end
   end
+
+  return results
 end
 
 -- }}}

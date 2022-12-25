@@ -3,10 +3,11 @@ require("plenary.test_harness")
 
 ---@param input string
 local function parse(input)
-  return S.parse(input, S.defaultContext)
+  return S.parse(input, S.default_context)
 end
 
 describe("Scrap", function()
+  --{{{ Parser
   describe("Parser", function()
     ---Expects some input to parse to some output
     ---@param input string
@@ -136,4 +137,94 @@ describe("Scrap", function()
       should_fail_parsing_at("{}{}}", 5)
     end)
   end)
+  --}}}
+  --{{{ Expansion
+  describe("Expansion", function()
+    ---@type ExpansionOptions
+    local no_casing = { all_caps = false, capitalized = false }
+
+    ---Make sure some patterns expand to some result
+    ---@param patterns ExpansionInput[]
+    ---@param expected Abbreviation[]
+    local function should_expand_to(patterns, expected)
+      assert.same(expected, S.expand_many(patterns, no_casing))
+    end
+
+    -- To test this kind of stuff we check that
+    --   - we error out
+    --   - the error contains the correct span
+    ---Make sure some patterns expand to some result
+    ---@param patterns ExpansionInput[]
+    ---@param slice StringSlice
+    local function should_fail_expanding(patterns, slice)
+      assert.error_match(function()
+        local _ = S.expand_many(patterns, no_casing)
+      end, S.formatSlice(slice))
+    end
+
+    it("should properly expand a basic expression", function()
+      local input = { { "foo{up,m{left,right}m,down}goo", "g{a,h{b,c}h,d}f" } }
+      local output = {
+        { "fooupgoo", "gaf" },
+        { "foomleftmgoo", "ghbhf" },
+        { "foomrightmgoo", "ghchf" },
+        { "foodowngoo", "gdf" }
+      }
+
+      should_expand_to(input, output)
+    end)
+
+    it("should cycle alternatives on the right", function()
+      local input = { { "{1,2,3,4,5}", "{odd,even}" } }
+      local output = {
+        { "1", "odd" },
+        { "2", "even" },
+        { "3", "odd" },
+        { "4", "even" },
+        { "5", "odd" }
+      }
+
+      should_expand_to(input, output)
+    end)
+
+    it("should copy alternatives on the left if block on the right is empty",
+       function()
+      local input = { { "{1,2,3}", "{}" } }
+      local output = { { "1", "1" }, { "2", "2" }, { "3", "3" } }
+
+      should_expand_to(input, output)
+    end)
+
+    it("should ignore extra options on the right", function()
+      local input = { { "{1,2,3}", "{a,b,c,d,e,f,g}" } }
+      local output = { { "1", "a" }, { "2", "b" }, { "3", "c" } }
+
+      should_expand_to(input, output)
+    end)
+
+    it("should stop expanding strings where the number of blocks differs",
+       function()
+      do
+        local problematic_right = "{}abcd{}"
+        local input = { { "ab{1,2,3}cd", problematic_right } }
+
+        should_fail_expanding(input, S.mk_string_slice(problematic_right, 7, 2))
+      end
+
+      do
+        local problematic_left = "{1,2}abcd{3,4}"
+        local input = { {problematic_left, "ab{1,2,3}cd"} }
+
+        should_fail_expanding(input, S.mk_string_slice(problematic_left, 10, 5))
+      end
+    end)
+
+    it("should fail on empty block on the left", function ()
+      local problematic_left = "e{}f"
+      local input = {{problematic_left, "{1,2,3}"}}
+
+      should_fail_expanding(input, S.mk_string_slice(problematic_left,2,2))
+    end)
+  end)
+  --}}}
 end)
