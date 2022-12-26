@@ -5,7 +5,7 @@ A fully-tested, pure lua implementation of vim-abolish inspired pattern expansio
 ## ❓ How to use
 This plugin exposes a simple lua interface - the `expand_many` function. This function takes in an array of from-to pairs, together with a table of default options:
 ```lua
-local scrap = require("scrap.nvim")
+local scrap = require("scrap")
 
 local patterns = {
   -- e0...9,n => ^0...^n
