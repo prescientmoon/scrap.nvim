@@ -48,19 +48,14 @@
             nvim-local --headless -c "PlenaryBustedDirectory ./lua/tests"
           '';
         };
-
       in
       {
         devShells.default = pkgs.mkShell {
           packages = devTools ++ [ neovimWrapped ];
         };
 
-        pkgs = {
-          inherit scrap-tests;
-        };
-
         apps = {
-          run-tests = {
+          tests = {
             type = "app";
             program = pkgs.lib.getExe scrap-tests;
           };

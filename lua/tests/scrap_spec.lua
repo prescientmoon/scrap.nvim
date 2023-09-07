@@ -165,10 +165,10 @@ describe("Scrap", function()
 		it("should properly expand a basic expression", function()
 			local input = { { "foo{up,m{left,right}m,down}goo", "g{a,h{b,c}h,d}f" } }
 			local output = {
-				{ "fooupgoo", "gaf" },
-				{ "foomleftmgoo", "ghbhf" },
+				{ "fooupgoo",      "gaf" },
+				{ "foomleftmgoo",  "ghbhf" },
 				{ "foomrightmgoo", "ghchf" },
-				{ "foodowngoo", "gdf" },
+				{ "foodowngoo",    "gdf" },
 			}
 
 			should_expand_to(input, output)
@@ -244,13 +244,13 @@ describe("Scrap", function()
 		it("should allow turning down capitalization locally", function()
 			local input = {
 				{ "something", "something" },
-				{ "else", "else", options = { capitalized = false } },
+				{ "else",      "else",     options = { capitalized = false } },
 			}
 
 			local output = {
 				{ "something", "something" },
 				{ "Something", "Something" },
-				{ "else", "else" },
+				{ "else",      "else" },
 			}
 
 			assert.same(output, S.expand_many(input))
