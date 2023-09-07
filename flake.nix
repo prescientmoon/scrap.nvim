@@ -7,58 +7,54 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        devTools = [ ];
+        plugins = [
+          pkgs.vimPlugins.plenary-nvim
 
-        mkPlugin = name: pkg: pkgs.buildEnv {
-          inherit name;
-          paths = [ pkg ];
-          extraPrefix = "/pack/nix/start/${name}";
-        };
+          # We could use a copy of scrap-nvim built using nix, but:
+          # - why bother
+          # - it would require us to have two separate nvim wrappers
+          #   (one for dev and one for testing)
+          "./."
+        ];
 
-        pluginPath = pkgs.symlinkJoin {
-          name = "neovim-plugins";
-          paths = [
-            (mkPlugin "plenary.nvim" pkgs.vimPlugins.plenary-nvim)
-          ];
-        };
+        # Wrap a clean copy of nvim and feeds it a custom runtimepath.
+        nvimWrapper = pkgs.symlinkJoin
+          {
+            name = "nvim-local";
+            meta.mainProgram = "nvim-local";
 
-        # Wrap a clean copy of nvim under the name "nvim-local" such that:
-        # - plenary.nvim is loaded
-        # - the global config is not imported
-        # - the current directory is added to the runtimepath
-        neovimWrapped = pkgs.symlinkJoin {
-          name = "nvim-local";
-          paths = [ pkgs.neovim ];
-          buildInputs = [ pkgs.makeWrapper ];
-          postBuild = ''
-            wrapProgram $out/bin/nvim \
-              --add-flags "\
-                --clean \
-                --cmd 'lua vim.opt.packpath = \"${pluginPath}\"' \
-                --cmd 'lua vim.opt.runtimepath:prepend(\".\")' \
-              "
-            mv $out/bin/nvim{,-local}
-          '';
-        };
+            paths = [ pkgs.neovim ];
+            buildInputs = [ pkgs.makeWrapper ];
 
-        scrap-tests = pkgs.writeShellApplication {
-          name = "run-tests";
-          runtimeInputs = [ neovimWrapped ];
-          text = ''
-            nvim-local --headless -c "PlenaryBustedDirectory ./lua/tests"
-          '';
-        };
+            postBuild =
+              let rtp = pkgs.lib.strings.concatStringsSep "," plugins;
+              in
+              ''
+                wrapProgram $out/bin/nvim \
+                  --add-flags "\
+                    --clean \
+                    --cmd 'lua vim.opt.runtimepath:prepend(\"${rtp}\")' \
+                  "
+                mv $out/bin/nvim{,-local}
+              '';
+          };
       in
       {
         devShells.default = pkgs.mkShell {
-          packages = devTools ++ [ neovimWrapped ];
+          packages = [ nvimWrapper ];
         };
 
-        apps = {
-          tests = {
-            type = "app";
-            program = pkgs.lib.getExe scrap-tests;
-          };
+        apps.tests = {
+          type = "app";
+          program = pkgs.lib.getExe (pkgs.writeShellApplication {
+            name = "scrap-unit-tests";
+            runtimeInputs = [ nvimWrapper ];
+            text = ''
+              nvim-local \
+                --headless \
+                -c "PlenaryBustedDirectory ./lua/tests"
+            '';
+          });
         };
       });
 }

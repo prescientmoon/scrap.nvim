@@ -1,5 +1,6 @@
 README.html
 .envrc
+result
 
 # My lua lsp keeps creating this
 lua/.luarc.json
