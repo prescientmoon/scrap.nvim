@@ -1,6 +1,5 @@
-*
-!lua
-!README.md
-!.neoconf.json
-!.lua-format
-!.gitignore
+README.html
+.envrc
+
+# My lua lsp keeps creating this
+lua/.luarc.json
