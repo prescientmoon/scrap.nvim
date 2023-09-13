@@ -6,7 +6,7 @@ A fully-tested, pure lua implementation of vim-abolish inspired pattern expansio
 
 Abbreviations are super useful! For instance, I very often make use of `thrf => therefore`. How can we improve the workflow of setting up new abbreviations?
 
-1. We can automatically generate capitalized versions of similar abbreviations (i.e.: `Thrf => Therefore`). This is handled automatically by this plugin! (see the [usage](#❓-how-to-use) section for more details)
+1. We can automatically generate capitalized versions of similar abbreviations (i.e.: `Thrf => Therefore`). This is handled automatically by this plugin! (see the [usage](#-how-to-use) section for more details)
 
 2. We often want to create multiple similar abbreviations. For instance, someone taking a simple calculus course might come up with something like:
 
