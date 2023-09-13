@@ -45,6 +45,10 @@ local patterns = {
 }
 
 local expanded = scrap.expand_many(patterns)
+-- - mx => matrix
+-- - Mx => Matrix
+-- - mxs => matrices
+-- - Mxs => Matrices
 
 -- This plugin lets you do whatever you want with the expanded list, hence expanding the functionality of this plugin to other vim-abolish features should be trivial.
 -- Lets use this convenient function for mapping all the pairs as local abbreviations:
