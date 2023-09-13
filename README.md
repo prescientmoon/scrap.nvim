@@ -35,7 +35,7 @@ Abbreviations are super useful! For instance, I very often make use of `thrf => 
 
 ## ❓ How to use
 
-This plugin exposes a simple lua interface - the `expand_many` function. This function takes in an array of from-to pairs, together with a table of default options:
+This plugin exposes a simple lua interface — the `expand_many` function. This function takes in an array of from-to pairs, together with a table of default options:
 
 ```lua
 local scrap = require("scrap")
