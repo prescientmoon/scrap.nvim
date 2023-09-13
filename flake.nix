@@ -40,8 +40,9 @@
           };
       in
       {
-        devShells.default = pkgs.mkShell {
-          packages = [ nvimWrapper ];
+        apps.nvim-dev = {
+          type = "app";
+          program = pkgs.lib.getExe nvimWrapper;
         };
 
         apps.tests = {

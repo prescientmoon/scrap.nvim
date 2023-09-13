@@ -106,6 +106,16 @@ So far, I have only implemented the features I use in my day to day life. If you
 
 ## 👷 Contributing
 
-This repository provides a nix flake for development. Simply run `nix develop` to enter a shell which provides a `nvim-local` command. This command will open a clean copy of neovim with nothing but the local copy of this plugin installed.
+This repository provides a nix flake for development!
 
-Moreover, you can run tests with `nix run .#tests`.
+- Create a clean copy of neovim with this plugin installed by running:
+
+  ```sh
+  nix run .#nix-dev
+  ```
+
+- Run the test suite with:
+
+  ```sh
+  nix run .#tests
+  ```
