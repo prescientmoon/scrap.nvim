@@ -4,6 +4,8 @@ A fully-tested, pure lua implementation of vim-abolish inspired pattern expansio
 
 ## 💡The idea
 
+You might also want to read the explanation provided by [vim-abolish](https://github.com/tpope/vim-abolish#abbreviation).
+
 Abbreviations are super useful! For instance, I very often make use of `thrf => therefore`. How can we improve the workflow of setting up new abbreviations?
 
 1. We can automatically generate capitalized versions of similar abbreviations (i.e.: `Thrf => Therefore`). This is handled automatically by this plugin! (see the [usage](#-how-to-use) section for more details)
