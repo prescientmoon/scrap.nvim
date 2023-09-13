@@ -4,26 +4,34 @@ A fully-tested, pure lua implementation of vim-abolish inspired pattern expansio
 
 ## 💡The idea
 
-Abbreviations are super useful! For instance, as a math student, I very often use `thrf => therefore`. It is often useful to automatically generate capitalized versions of similar abbreviations (i.e.: `Thrf => Therefore`).
+Abbreviations are super useful! For instance, I very often make use of `thrf => therefore`. How can we improve the workflow of setting up new abbreviations?
 
-It's often useful to create multiple similar abbreviations. For instance, someone taking a simple calculus course might be interested in having something like:
+1. We can automatically generate capitalized versions of similar abbreviations (i.e.: `Thrf => Therefore`). This is handled automatically by this plugin! (see the [usage](#❓-how-to-use) section for more details)
 
-- `ips => integration by substitution`
-- `ipp => integration by parts`
+2. We often want to create multiple similar abbreviations. For instance, someone taking a simple calculus course might come up with something like:
 
-This plugin allows us to do better by marking alternatives using brackets — `ip{s,p} => integration by {substitution,parts}`.
+   - `ips => integration by substitution`
+   - `ipp => integration by parts`
 
-Specifying plural forms for words appears to be a very common pattern — `grho{,s} => group homomorphism{,s}`. Notice how the brackets have the same content on both sides? We can go ahead and omit them from the right hand side — `grho{,s} => group homomorphism{}`, which will still produce:
+   This plugin allows us to do better by marking alternatives using brackets:
 
-- `grho => group homomorphism`
-- `grhos => group homomorphisms`
+   ```
+   ip{s,p} => integration by {substitution,parts}
+   ```
 
-Although not super useful in practice (implemented for the sake of feature parity with `vim-abolish`), values on the right hand side are automatically cycled indefinitely. For instance, `parity-of-{0,1,2,3} => {even,odd}` will produce
+3. Specifying plural forms for words appears to be a very common pattern — `grho{,s} => group homomorphism{,s}`. Notice how the brackets have the same content on both sides? We can go ahead and omit them from the right hand side — `grho{,s} => group homomorphism{}`, which will still produce:
 
-- `parity-of-0 => even`
-- `parity-of-1 => odd`
-- `parity-of-2 => even`
-- `parity-of-3 => odd`
+   - `grho => group homomorphism`
+   - `grhos => group homomorphisms`
+
+   More generally, scrap will copy the contents of the brackets on the left when the brackets on the right are empty.
+
+4. Although not super useful in practice (implemented for the sake of feature parity with `vim-abolish`), values on the right hand side are automatically cycled indefinitely. For instance, `parity-of-{0,1,2,3} => {even,odd}` will produce
+
+   - `parity-of-0 => even`
+   - `parity-of-1 => odd`
+   - `parity-of-2 => even`
+   - `parity-of-3 => odd`
 
 ## ❓ How to use
 
@@ -33,30 +41,30 @@ This plugin exposes a simple lua interface - the `expand_many` function. This fu
 local scrap = require("scrap")
 
 local patterns = {
-  -- e0...9,n => ^0...^n
-  -- s0...9,n => _0..._n
-  {"{e,s}{0,1,2,3,4,5,6,7,8,9,n}", "{^,_}{}"}
+  { "mx{,s}", "matri{x,ces}" }
 }
 
--- By default, this plugin will generate capitalized versions of each pattern.
--- Eg: {"thrf", "therefore"} will generate
---  - thrf => therefore
---  - Thrf => Therefore
---
--- This behavior can be turned off for the entire list (as seen bellow), or on a per pattern basis (see the features section)
---
--- This plugin also provides an `all_caps` option (false by default), which does what you would expect. For instance, this additional abbreviation would be generated in the above example:
---  - THRF => THEREFORE
-local expanded = scrap.expand_many(patterns, {all_caps = true})
+local expanded = scrap.expand_many(patterns)
 
 -- This plugin lets you do whatever you want with the expanded list, hence expanding the functionality of this plugin to other vim-abolish features should be trivial.
--- For now, the plugin provides a convenient function for mapping all the above pairs of strings as local abbreviations:
+-- Lets use this convenient function for mapping all the pairs as local abbreviations:
 scrap.many_local_abbreviations(expanded)
 ```
 
-## ✨ Additional features over vim-abolish
+Capitalization can be fine tuned using the options table:
 
-- ⚙️ Configure capitalization on a per-abbreviation basis
+```lua
+scrap.expand_many(
+    {{ "thrf", "therefore" }},
+    { all_caps = true, capitalized = false }
+)
+-- - thrf => therefore
+-- - THRF => THEREFORE
+```
+
+## ✨ Additional features not present in vim-abolish
+
+- ⚙️ Override capitalization settings on a per-abbreviation basis
 
   ```lua
   {{ "foo", "bar", options = {capitalized = false, all_caps = true}}}
