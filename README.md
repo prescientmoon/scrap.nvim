@@ -113,7 +113,7 @@ This repository provides a nix flake for development!
 - Create a clean copy of neovim with this plugin installed by running:
 
   ```sh
-  nix run .#nix-dev
+  nix run .#nvim-dev
   ```
 
 - Run the test suite with:
